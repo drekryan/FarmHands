@@ -1,8 +1,9 @@
 FarmHands
 =========
 
-Author: [Drekryan](https://www.github.com/Drekryan)
-Requires: WorldGuard 6.1.3-SNAPSHOT
+**Author:** [Drekryan](https://www.github.com/Drekryan)
+
+**Requires:** WorldGuard 6.1.3-SNAPSHOT
 
 FarmHands is a Minecraft Spigot Plugin that adds a custom WorldGuard flag
 to auto replace crops when they are harvested.
