@@ -8,6 +8,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class FarmHands extends JavaPlugin {
     private WorldGuardPlugin worldGuard;
+    private BlockListener blockListener;
     private static Flag REPLACE_CROPS = new BooleanFlag("replace-crops");
 
     @Override
@@ -22,6 +23,8 @@ public class FarmHands extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        //Register BlockListener
+        blockListener = new BlockListener(this);
         this.getLogger().info("Successfully Enabled!");
     }
 
@@ -30,7 +33,7 @@ public class FarmHands extends JavaPlugin {
         this.getLogger().info("Disabled FarmHands...");
     }
 
-    private WorldGuardPlugin getWorldGuard() {
+    WorldGuardPlugin getWorldGuard() {
         Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
 
         // WorldGuard may not be loaded
