@@ -7,10 +7,9 @@ import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -26,38 +25,82 @@ class BlockListener implements Listener {
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+    //TODO: Should we do something about crop trampling?
+    //TODO: Should we do something to prevent water harvesting or pistons?
     @EventHandler (priority = EventPriority.HIGHEST)
     public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
         Block block = event.getBlock();
-        Location loc = block.getLocation();
-        boolean replace = false;
+        Location location = block.getLocation();
+        World world = block.getWorld();
 
-        if (block.getType() == Material.CARROT || block.getType() == Material.BEETROOT_BLOCK || block.getType() == Material.CROPS ||
-                block.getType() == Material.WHEAT || block.getType() == Material.POTATO) {
-            Material mat = block.getType();
-            RegionManager rm = worldguard.getRegionManager(block.getWorld());
-            ApplicableRegionSet regions = rm.getApplicableRegions(BukkitUtil.toVector(loc));
+        //Check that block is a normal crop or Nether Wart
+        if (isCrop(block)) {
+            //Allow players in creative mode to bypass protection
+            if (playerInCreativeMode(player)) return;
 
-            for (ProtectedRegion region : regions.getRegions()) {
-                Flag flag = DefaultFlag.fuzzyMatchFlag(worldguard.getFlagRegistry(), "replace-crops");
-
-                if ((boolean) region.getFlag(flag)) {
-                    replace = true;
-                }
-            }
-
-            if (replace) {
-                int age = block.getData();
-                int reqAge = (block.getType() == Material.BEETROOT_BLOCK) ? 3 : 7;
-
+            Material material = block.getType();
+            if (shouldReplaceCrops(block)) {
                 event.setCancelled(true);
-                if (age == reqAge) {
+
+                //Check to see if the crop is fully grown
+                if (isFullyGrown(block)) {
+                    //Break and replace crop
                     block.breakNaturally();
-                    loc.getWorld().getBlockAt(loc).setType(mat, true);
+                    world.getBlockAt(location).setType(material);
                 } else {
-                    event.getPlayer().sendMessage(ChatColor.GOLD + "[FarmHands] " + ChatColor.RED + "Sorry, these crops aren't ready yet...");
+                    //Warn the player the crop is not yet grown
+                    //TODO: Should a sound be played here?
+                    player.sendMessage(ChatColor.GOLD + "[FarmHands] " + ChatColor.RED + "Sorry, this crop isn't fully grown yet...");
                 }
             }
         }
+
+        //TODO: Handle Cactus/Sugar Cane/Melon Stem/Pumpkin Stem. Possibly Chorus Plants
+        //For now just prevent breaking these blocks all together
+        Material material = block.getType();
+        if ((material == Material.CACTUS || material == Material.SUGAR_CANE_BLOCK
+                || material == Material.MELON_STEM || material == Material.PUMPKIN_STEM
+                || material == Material.CHORUS_PLANT || material == Material.CHORUS_FLOWER)
+                && !playerInCreativeMode(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean playerInCreativeMode(Player player) {
+        return player.getGameMode().equals(GameMode.CREATIVE);
+    }
+
+    private boolean shouldReplaceCrops(Block block) {
+        Location location = block.getLocation();
+        World world = block.getWorld();
+        RegionManager rm = worldguard.getRegionManager(world);
+        ApplicableRegionSet regions = rm.getApplicableRegions(BukkitUtil.toVector(location));
+
+        for (ProtectedRegion region : regions.getRegions()) {
+            Flag flag = DefaultFlag.fuzzyMatchFlag(worldguard.getFlagRegistry(), "replace-crops");
+
+            //TODO: Possibly more safeguards here?
+            if ((boolean) region.getFlag(flag)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isCrop(Block block) {
+        Material material = block.getType();
+        return (material == Material.CARROT || material == Material.BEETROOT_BLOCK
+                || material == Material.CROPS || material == Material.WHEAT
+                || material == Material.POTATO || material == Material.NETHER_WARTS);
+    }
+
+    private boolean isFullyGrown(Block block) {
+        Material material = block.getType();
+        int age = block.getData(); //TODO: Try to eliminate this deprecated method
+        int grownAge = (material == Material.BEETROOT_BLOCK || material == Material.NETHER_WARTS) ? 3 : 7;
+
+        return age == grownAge;
     }
 }

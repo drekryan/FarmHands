@@ -7,24 +7,29 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class FarmHands extends JavaPlugin {
-    private WorldGuardPlugin worldGuard;
-    private BlockListener blockListener;
-    private static Flag REPLACE_CROPS = new BooleanFlag("replace-crops");
-
     @Override
     public void onLoad() {
-        this.worldGuard = getWorldGuard();
+        WorldGuardPlugin worldGuard = getWorldGuard();
 
         if (worldGuard != null) {
-            worldGuard.getFlagRegistry().register(REPLACE_CROPS);
-            this.getLogger().info("Custom WorldGuard Flag has been registered");
+            try {
+                Flag customFlag = new BooleanFlag("replace-crops");
+                worldGuard.getFlagRegistry().register(customFlag);
+                this.getLogger().info("Custom WorldGuard Flag has been registered");
+            } catch (Exception e) {
+                this.getLogger().severe("Unable to register flag! Are you running at least WorldGuard 6.1.3?");
+                e.printStackTrace();
+                this.onDisable();
+            }
+        } else {
+            this.getLogger().severe("Unable to find WorldGuard! Disabling...");
         }
     }
 
     @Override
     public void onEnable() {
         //Register BlockListener
-        blockListener = new BlockListener(this);
+        new BlockListener(this);
         this.getLogger().info("Successfully Enabled!");
     }
 
