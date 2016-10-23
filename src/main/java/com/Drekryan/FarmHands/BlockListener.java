@@ -9,11 +9,16 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 class BlockListener implements Listener {
     private FarmHands plugin;
@@ -64,6 +69,40 @@ class BlockListener implements Listener {
                 || material == Material.CHORUS_PLANT || material == Material.CHORUS_FLOWER)
                 && !playerInCreativeMode(player)) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        Block block = event.getClickedBlock();
+        if (block == null) return;
+
+        //Check if the player is trampling a crop
+        if (event.getAction() == Action.PHYSICAL && block.getType() == Material.SOIL
+                && shouldReplaceCrops(block.getRelative(BlockFace.UP, 1))) {
+            plugin.getLogger().info("Crop was trampled by " + event.getPlayer().getDisplayName());
+            event.setUseInteractedBlock(Event.Result.DENY);
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBlockFromTo(BlockFromToEvent event) {
+        //Prevents harvesting crops with water
+        Block block = event.getBlock();
+        Block toBlock = event.getToBlock();
+
+        //TODO: Improve this to try to prevent water being placed directly on a crop
+        if (isCrop(toBlock) && (block.getType() == Material.WATER || block.getType() == Material.STATIONARY_WATER
+                || block.getType() == Material.AIR)) {
+            System.out.println("Attempting to protect crop");
+            Material material = toBlock.getType();
+            byte data = toBlock.getData();
+            event.setCancelled(true);
+            block.setType(Material.AIR);
+
+            toBlock.setType(material);
+            toBlock.setData(data);
         }
     }
 
