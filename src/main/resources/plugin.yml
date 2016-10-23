@@ -1,0 +1,6 @@
+name: FarmHands
+description: A plugin that replants harvested crops
+author: Drekryan
+main: com.Drekryan.FarmHands.FarmHands
+version: ${project.version}
+depend: [WorldGuard]
