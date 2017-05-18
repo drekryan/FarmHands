@@ -86,6 +86,7 @@ class BlockListener implements Listener {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockFromTo(BlockFromToEvent event) {
         //Prevents harvesting crops with water
@@ -135,6 +136,7 @@ class BlockListener implements Listener {
                 || material == Material.POTATO || material == Material.NETHER_WARTS);
     }
 
+    @SuppressWarnings("deprecation")
     private boolean isFullyGrown(Block block) {
         Material material = block.getType();
         int age = block.getData(); //TODO: Try to eliminate this deprecated method
