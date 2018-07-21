@@ -3,4 +3,5 @@ description: A plugin that replants harvested crops
 author: Drekryan
 main: com.Drekryan.FarmHands.FarmHands
 version: ${project.version}
+api-version: 1.13
 depend: [WorldGuard]
